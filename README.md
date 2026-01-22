@@ -1,4 +1,4 @@
-# Green Analyze Exporter (CSV/XLSX)
+﻿# Green Analyze Exporter (CSV/XLSX)
 
 Greenの分析ページに表示される応募/アプローチの表を、CSVまたはXLSXでダウンロードするChrome拡張です。
 
@@ -28,6 +28,16 @@ Greenの分析ページに表示される応募/アプローチの表を、CSV�
 └─ README.md
 ```
 
+## インストール (Chromeに追加)
+
+1. [GitHub/GreenAnalyzeCsvExtension](https://github.com/yoshida-san/GreenAnalyzeCsvExtension)からZIPでダウンロードして解凍
+    1. 緑色の「<> Code」というボタンをクリックして「Download ZIP」をクリック
+2. Chromeで `chrome://extensions` を開く
+3. 右上の「デベロッパーモード」をON
+4. 「パッケージ化されていない拡張機能を読み込む」で解凍したフォルダを選択
+    1. content.jsやmanifest.jsonなどがあるフォルダ
+5. ツールバーに拡張機能のアイコンが表示されれば完了
+
 ## 使い方
 
 1. Greenの分析ページを開く  
@@ -50,3 +60,4 @@ Greenの分析ページに表示される応募/アプローチの表を、CSV�
 ## ライセンス
 
 Internal Use / As-Is
+
