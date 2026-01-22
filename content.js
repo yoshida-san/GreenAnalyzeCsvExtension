@@ -8,10 +8,18 @@ function normalizeText(text) {
   return String(text ?? "").replace(/\s+/g, " ").trim();
 }
 
+function cellText(cell) {
+  const tips = cell.querySelectorAll(".tips-area");
+  if (tips.length === 0) return normalizeText(cell.textContent);
+  const clone = cell.cloneNode(true);
+  clone.querySelectorAll(".tips-area").forEach(node => node.remove());
+  return normalizeText(clone.textContent);
+}
+
 function tableTo2D(table) {
   const rows = [...table.querySelectorAll("tr")];
   return rows.map(tr =>
-    [...tr.querySelectorAll("th,td")].map(td => normalizeText(td.textContent))
+    [...tr.querySelectorAll("th,td")].map(td => cellText(td))
   );
 }
 
@@ -72,6 +80,7 @@ function buildCsv(options = {}) {
     : data2d;
   const { from, to, jobType, activeTab } = getMeta();
 
+  const includeMeta = options.excludeMeta !== true;
   const metaLines = [
     ["# period_from", from],
     ["# period_to", to],
@@ -80,7 +89,7 @@ function buildCsv(options = {}) {
   ].map(cols => cols.map(csvEscape).join(","));
 
   const csvLines = filtered2d.map(row => row.map(csvEscape).join(","));
-  return [...metaLines, ...csvLines].join("\n");
+  return includeMeta ? [...metaLines, ...csvLines].join("\n") : csvLines.join("\n");
 }
 
 function buildXlsx(options = {}) {
@@ -99,13 +108,16 @@ function buildXlsx(options = {}) {
       })
     : data2d;
   const { from, to, jobType, activeTab } = getMeta();
-  const rows = [
-    ["# period_from", from],
-    ["# period_to", to],
-    ["# job_type", jobType],
-    ["# tab", activeTab],
-    ...filtered2d
-  ];
+  const includeMeta = options.excludeMeta !== true;
+  const rows = includeMeta
+    ? [
+        ["# period_from", from],
+        ["# period_to", to],
+        ["# job_type", jobType],
+        ["# tab", activeTab],
+        ...filtered2d
+      ]
+    : filtered2d;
 
   const worksheet = XLSX.utils.aoa_to_sheet(rows);
   const workbook = XLSX.utils.book_new();
