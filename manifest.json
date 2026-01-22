@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Green Analyze CSV Downloader",
+  "version": "0.3.0",
+  "description": "Greenの数値分析テーブルをCSVでダウンロードします（service worker対応）",
+  "permissions": [
+    "activeTab",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://www.green-japan.com/*"
+  ],
+  "action": {
+    "default_title": "Download CSV",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "sw.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.green-japan.com/client/analyze*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}
