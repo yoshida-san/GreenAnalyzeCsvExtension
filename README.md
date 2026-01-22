@@ -1,48 +1,52 @@
-# Green Analyze CSV Exporter
+# Green Analyze Exporter (CSV/XLSX)
 
-転職サイト **Green（企業管理画面）** の  
-**「数値分析」ページに表示される求人別KPIテーブル**を  
-**CSV形式でダウンロード**する Chrome 拡張です。
+Greenの分析ページに表示される応募/アプローチの表を、CSVまたはXLSXでダウンロードするChrome拡張です。
 
-- 「求職者からのアプローチ」
-- 「貴社からのアプローチ」
+## できること
 
-両タブに対応しています。
+- 応募/アプローチのテーブルをCSVまたはXLSXで保存
+- CSV/XLSXの切り替えUI
+- 集計行（合計/平均/平均利用率）の除外オプション
 
----
+## 仕組み
 
-## ✨ 主な機能
+- Content Scriptで表を取得してデータ化
+- XLSXはSheetJSで生成（`vendor/xlsx.full.min.js`）
+- Service Workerで`chrome.downloads.download`を使用して保存
 
-- 数値分析テーブルを **CSVとして保存**
-- **保存先選択ダイアログあり**（downloads API使用）
-- 表示中のタブ（apply / approach）を自動判別
-- 期間・職種・タブ情報をCSVにメタ情報として付与
-- 以下の行を **除外するオプション**付き
-  - 合計
-  - 平均
-  - 採用成功求人平均
-
----
-
-## 🧩 技術構成
-
-- Chrome Extension **Manifest V3**
-- Content Script による DOM 抽出
-- Service Worker（background）による `chrome.downloads.download`
-- Green内部APIは使用せず、**表示済みDOMのみを対象**
-
-> 管理画面上で人が見る情報をそのままCSV化するため、  
-> 仕様変更に比較的強く、実務用途向けです。
-
----
-
-## 📦 ファイル構成
+## ファイル構成
 
 ```text
 .
 ├─ manifest.json
-├─ sw.js              # service worker（CSVダウンロード）
-├─ content.js         # テーブル抽出・CSV生成
-├─ popup.html         # UI
+├─ sw.js
+├─ content.js
+├─ popup.html
 ├─ popup.js
+├─ vendor/
+│  └─ xlsx.full.min.js
 └─ README.md
+```
+
+## 使い方
+
+1. Greenの分析ページを開く  
+   `https://www.green-japan.com/client/analyze`
+2. 対象期間を指定し、応募/アプローチのタブを表示
+3. 拡張のポップアップから形式（CSV/XLSX）を選択
+4. 「ダウンロード」を押して保存
+
+## 権限
+
+- `downloads`: ファイル保存のため
+- `activeTab`: アクティブタブへのアクセス
+- `host_permissions`: `https://www.green-japan.com/*`
+
+## 注意
+
+- ページ表示直後は表が未描画のことがあります。表示されてから実行してください。
+- Green側のDOMが変わると動作しなくなる可能性があります。
+
+## ライセンス
+
+Internal Use / As-Is

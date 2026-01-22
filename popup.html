@@ -1,26 +1,35 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <style>
       body { font-family: sans-serif; width: 300px; padding: 12px; }
       button { width: 100%; padding: 10px; margin-bottom: 10px; }
-      label { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 6px 0 10px; }
+      .row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 6px 0 10px; }
+      .format { display: flex; align-items: center; gap: 10px; font-size: 13px; margin: 6px 0 10px; }
+      .format-title { min-width: 40px; color: #333; }
+      .format label { display: flex; align-items: center; gap: 6px; margin: 0; }
       .hint { color: #666; font-size: 12px; line-height: 1.4; }
       .msg { margin-top: 8px; font-size: 12px; white-space: pre-wrap; }
     </style>
   </head>
   <body>
-    <button id="download">CSVをダウンロード（保存先選択）</button>
+    <button id="download">ダウンロード（CSV/XLSX）</button>
 
-    <label>
+    <div class="format">
+      <div class="format-title">形式</div>
+      <label><input type="radio" name="format" value="csv" />CSV</label>
+      <label><input type="radio" name="format" value="xlsx" checked />XLSX</label>
+    </div>
+
+    <label class="row">
       <input type="checkbox" id="excludeSummary" checked />
-      「合計」「平均」「採用成功求人平均」を除外
+      集計行（合計/平均/平均利用率）を除外
     </label>
 
     <div class="hint">
-      1) 期間を選んで「計算する」でテーブルを表示<br/>
-      2) このボタンでCSVを保存（saveAs=true）
+      1) 対象期間を指定して「応募」「アプローチ」タブを表示<br/>
+      2) このボタンでCSV/XLSXを保存します（saveAs=true）
     </div>
 
     <div class="msg" id="msg"></div>

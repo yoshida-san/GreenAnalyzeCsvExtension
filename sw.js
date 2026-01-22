@@ -1,13 +1,14 @@
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+﻿chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
-      if (msg?.type !== "download_csv") return;
+      if (msg?.type !== "download_file") return;
 
       const filename = msg.filename || "green_analyze.csv";
-      const csv = String(msg.csv ?? "");
-
-      // data URLでダウンロード（service worker内で完結）
-      const url = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      const mime = msg.mime || "text/csv";
+      const data = String(msg.data ?? "");
+      const url = msg.isBase64
+        ? `data:${mime};base64,${data}`
+        : `data:${mime};charset=utf-8,` + encodeURIComponent(data);
 
       const downloadId = await chrome.downloads.download({
         url,

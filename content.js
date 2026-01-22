@@ -1,4 +1,4 @@
-function csvEscape(value) {
+﻿function csvEscape(value) {
   const s = String(value ?? "");
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
@@ -16,7 +16,6 @@ function tableTo2D(table) {
 }
 
 function pickAnalyzeTable() {
-  // 両タブ対応（求職者/貴社）
   return (
     document.querySelector("table.analyze-table-apply") ||
     document.querySelector("table.analyze-table-approach") ||
@@ -41,7 +40,7 @@ async function waitForTable(timeoutMs = 8000) {
   return await new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       obs.disconnect();
-      reject(new Error("テーブルが見つかりません。先に『計算する』を押して表示してください。"));
+      reject(new Error("テーブルが見つかりません。表示してから再度お試しください。"));
     }, timeoutMs);
 
     const obs = new MutationObserver(() => {
@@ -59,11 +58,11 @@ async function waitForTable(timeoutMs = 8000) {
 
 function buildCsv(options = {}) {
   const table = pickAnalyzeTable();
-  if (!table) throw new Error("テーブルが見つかりません。");
+  if (!table) throw new Error("テーブルが見つかりません。表示してから再度お試しください。");
 
   const data2d = tableTo2D(table);
   const excludeSummary = options.excludeSummary === true;
-  const summaryLabels = new Set(["合計", "平均", "採用成功求人平均"]);
+  const summaryLabels = new Set(["合計", "平均", "平均利用率"]);
   const filtered2d = excludeSummary
     ? data2d.filter((row, idx) => {
         if (idx === 0) return true; // header
@@ -73,7 +72,6 @@ function buildCsv(options = {}) {
     : data2d;
   const { from, to, jobType, activeTab } = getMeta();
 
-  // 先頭にメタ情報（不要なら削除してOK）
   const metaLines = [
     ["# period_from", from],
     ["# period_to", to],
@@ -85,14 +83,46 @@ function buildCsv(options = {}) {
   return [...metaLines, ...csvLines].join("\n");
 }
 
-function buildFilename() {
+function buildXlsx(options = {}) {
+  if (typeof XLSX === "undefined") throw new Error("XLSXライブラリが読み込まれていません。");
+  const table = pickAnalyzeTable();
+  if (!table) throw new Error("テーブルが見つかりません。表示してから再度お試しください。");
+
+  const data2d = tableTo2D(table);
+  const excludeSummary = options.excludeSummary === true;
+  const summaryLabels = new Set(["合計", "平均", "平均利用率"]);
+  const filtered2d = excludeSummary
+    ? data2d.filter((row, idx) => {
+        if (idx === 0) return true; // header
+        const label = (row?.[0] ?? "").trim();
+        return !summaryLabels.has(label);
+      })
+    : data2d;
+  const { from, to, jobType, activeTab } = getMeta();
+  const rows = [
+    ["# period_from", from],
+    ["# period_to", to],
+    ["# job_type", jobType],
+    ["# tab", activeTab],
+    ...filtered2d
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Analyze");
+  return XLSX.write(workbook, { bookType: "xlsx", type: "base64" });
+}
+
+function buildFilename(extension) {
   const { from, to, activeTab } = getMeta();
-  const tabKey = activeTab.includes("求職者") ? "apply"
-               : activeTab.includes("貴社") ? "approach"
+  const tabKey = activeTab.includes("求職者からのアプローチ") ? "approach_from_jobseeker"
+               : activeTab.includes("貴社からのアプローチ") ? "approach_from_company"
+               : activeTab.includes("応募") ? "apply"
+               : activeTab.includes("アプローチ") ? "approach"
                : "analyze";
   const f = (from || "").replaceAll("/", "");
   const t = (to || "").replaceAll("/", "");
-  return `green_${tabKey}_${f}-${t}.csv`;
+  return `green_${tabKey}_${f}-${t}.${extension}`;
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -104,15 +134,24 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
 
       await waitForTable();
-      const csv = buildCsv(msg?.options ?? {});
-      const filename = buildFilename();
-
-      // service workerへ渡してdownloads APIでsaveAs=trueダウンロード
-      const res = await chrome.runtime.sendMessage({
-        type: "download_csv",
-        filename,
-        csv
-      });
+      const format = msg?.options?.format === "xlsx" ? "xlsx" : "csv";
+      const filename = buildFilename(format);
+      const res =
+        format === "xlsx"
+          ? await chrome.runtime.sendMessage({
+              type: "download_file",
+              filename,
+              mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              data: buildXlsx(msg?.options ?? {}),
+              isBase64: true
+            })
+          : await chrome.runtime.sendMessage({
+              type: "download_file",
+              filename,
+              mime: "text/csv",
+              data: buildCsv(msg?.options ?? {}),
+              isBase64: false
+            });
 
       if (!res?.ok) throw new Error(res?.error ?? "ダウンロードに失敗しました。");
 
